@@ -87,4 +87,4 @@ if __name__ == "__main__":
 
     print("\n=== Завдання 3: Фільтрація IP ===")
     allowed = ["83.149.9.216", "66.249.73.135", "105.235.130.196"]
-    filter_ips(log_path, "filtered_ips.txt", allowed)
+    filter_ips(log_path, "../filtered_ips.txt", allowed)
