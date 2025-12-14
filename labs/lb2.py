@@ -1,140 +1,90 @@
-# Завдання 1
-# [
-#     {
-#         "exchangedate": "07.12.2025",
-#         "r030": 840,
-#         "cc": "USD",
-#         "txt": "Долар США",
-#         "enname": "US Dollar",
-#         "rate": 42.1838,
-#         "units": 1,
-#         "rate_per_unit": 42.1838,
-#         "group": "1",
-#         "calcdate": "04.12.2025"
-#     },
-#     {
-#         "exchangedate": "08.12.2025",
-#         "r030": 840,
-#         "cc": "USD",
-#         "txt": "Долар США",
-#         "enname": "US Dollar",
-#         "rate": 42.0567,
-#         "units": 1,
-#         "rate_per_unit": 42.0567,
-#         "group": "1",
-#         "calcdate": "05.12.2025"
-#     },
-#     {
-#         "exchangedate": "09.12.2025",
-#         "r030": 840,
-#         "cc": "USD",
-#         "txt": "Долар США",
-#         "enname": "US Dollar",
-#         "rate": 42.07,
-#         "units": 1,
-#         "rate_per_unit": 42.07,
-#         "group": "1",
-#         "calcdate": "08.12.2025"
-#     },
-#     {
-#         "exchangedate": "10.12.2025",
-#         "r030": 840,
-#         "cc": "USD",
-#         "txt": "Долар США",
-#         "enname": "US Dollar",
-#         "rate": 42.1838,
-#         "units": 1,
-#         "rate_per_unit": 42.1838,
-#         "group": "1",
-#         "calcdate": "09.12.2025"
-#     },
-#     {
-#         "exchangedate": "11.12.2025",
-#         "r030": 840,
-#         "cc": "USD",
-#         "txt": "Долар США",
-#         "enname": "US Dollar",
-#         "rate": 42.2812,
-#         "units": 1,
-#         "rate_per_unit": 42.2812,
-#         "group": "1",
-#         "calcdate": "10.12.2025"
-#     },
-#     {
-#         "exchangedate": "12.12.2025",
-#         "r030": 840,
-#         "cc": "USD",
-#         "txt": "Долар США",
-#         "enname": "US Dollar",
-#         "rate": 42.2721,
-#         "units": 1,
-#         "rate_per_unit": 42.2721,
-#         "group": "1",
-#         "calcdate": "11.12.2025"
-#     },
-#     {
-#         "exchangedate": "13.12.2025",
-#         "r030": 840,
-#         "cc": "USD",
-#         "txt": "Долар США",
-#         "enname": "US Dollar",
-#         "rate": 42.2721,
-#         "units": 1,
-#         "rate_per_unit": 42.2721,
-#         "group": "1",
-#         "calcdate": "11.12.2025"
-#     },
-#     {
-#         "exchangedate": "14.12.2025",
-#         "r030": 840,
-#         "cc": "USD",
-#         "txt": "Долар США",
-#         "enname": "US Dollar",
-#         "rate": 42.2721,
-#         "units": 1,
-#         "rate_per_unit": 42.2721,
-#         "group": "1",
-#         "calcdate": "11.12.2025"
-#     }
-# ]
+import hashlib
 
-import requests
-import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
+def analyze_log_file(log_file_path):
 
-end_date = datetime.now()
-start_date = end_date - timedelta(days=7)
+    results = {}
 
-#Завдання 2
-url = "https://bank.gov.ua/NBU_Exchange/exchange_site"
-params = {
-    "start": start_date.strftime('%Y%m%d'),
-    "end": end_date.strftime('%Y%m%d'),
-    "valcode": "usd",
-    "sort": "exchangedate",
-    "order": "asc",
-    "json": ""
-}
+    try:
+        with open(log_file_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                parts = line.strip().split()
+                if len(parts) < 9:
+                    continue
+                code = parts[-2]
+                if code.isdigit():
+                    results[code] = results.get(code, 0) + 1
 
-response = requests.get(url, params=params)
-data = response.json()
+        return results
 
-print(f"Отримано записів: {len(data)}")
-for item in data:
-    print(f"Дата: {item['exchangedate']} | Курс: {item['rate']}")
+    except FileNotFoundError:
+        print(f"[Помилка] Файл '{log_file_path}' не знайдено.")
+        return {}
+    except IOError:
+        print(f"[Помилка] Не вдалося прочитати файл '{log_file_path}'.")
+        return {}
 
-#Завдання 3
-dates = [item['exchangedate'] for item in data]
-rates = [item['rate'] for item in data]
+def generate_file_hashes(*file_paths):
+    hashes = {}
 
-plt.figure(figsize=(10, 6))
-plt.plot(dates, rates, marker='o', label='USD')
+    for path in file_paths:
+        try:
+            with open(path, 'rb') as file:
+                content = file.read()
+                file_hash = hashlib.sha256(content).hexdigest()
+                hashes[path] = file_hash
+        except FileNotFoundError:
+            print(f"[Помилка] Файл '{path}' не знайдено.")
+        except IOError:
+            print(f"[Помилка] Не вдалося прочитати файл '{path}'.")
 
-plt.title(f'Курс USD з {dates[0]} по {dates[-1]}')
-plt.xlabel('Дата')
-plt.ylabel('Курс (UAH)')
-plt.xticks(rotation=45)
-plt.grid(True)
-plt.legend()
-plt.tight_layout()
-plt.show()
+    return hashes
+
+
+def filter_ips(input_file_path, output_file_path, allowed_ips):
+    ip_counts = {ip: 0 for ip in allowed_ips}
+
+    try:
+        with open(input_file_path, 'r', encoding='utf-8') as infile:
+            for line in infile:
+                parts = line.strip().split()
+                if not parts:
+                    continue
+                ip = parts[0]
+                if ip in ip_counts:
+                    ip_counts[ip] += 1
+
+    except FileNotFoundError:
+        print(f"[Помилка] Вхідний файл '{input_file_path}' не знайдено.")
+        return
+    except IOError:
+        print(f"[Помилка] Не вдалося прочитати файл '{input_file_path}'.")
+        return
+
+    try:
+        with open(output_file_path, 'w', encoding='utf-8') as outfile:
+            for ip, count in ip_counts.items():
+                outfile.write(f"{ip} - {count}\n")
+
+        print(f"[OK] Результати записано у файл '{output_file_path}'.")
+
+    except IOError:
+        print(f"[Помилка] Не вдалося записати до файлу '{output_file_path}'.")
+
+
+
+if __name__ == "__main__":
+    log_path = "apache_logs.txt"
+
+    print("=== Завдання 1: Аналіз кодів HTTP ===")
+    codes = analyze_log_file(log_path)
+    for code, count in codes.items():
+        print(f"{code}: {count}")
+
+    print("\n=== Завдання 2: Хеш SHA-256 ===")
+    hashes = generate_file_hashes(log_path)
+    for file, h in hashes.items():
+        print(f"{file}: {h}")
+
+    print("\n=== Завдання 3: Фільтрація IP ===")
+    allowed = ["83.149.9.216", "66.249.73.135", "105.235.130.196"]
+    filter_ips(log_path, "../filtered_ips.txt", allowed)
